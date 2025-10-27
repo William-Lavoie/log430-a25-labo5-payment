@@ -6,6 +6,7 @@ Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 
 from models.payment import Payment
 from db import get_sqlalchemy_session
+import requests
 
 def create_payment(order_id: int, user_id: int, total_amount: float):
     """Insert payment with items in MySQL"""
@@ -43,7 +44,20 @@ def update_status_to_paid(payment_id: int):
         # Update the payment status
         payment.is_paid = True
         session.commit()
-        
+
+        order_payment  = {
+            "order_id": payment.order_id,
+            "is_paid": payment.is_paid,
+        }
+
+        response_from_store_manager = requests.put('http://api-gateway:8080//store-api/orders',
+            json=order_payment,
+            headers={'Content-Type': 'application/json'}
+        )
+
+        if response_from_store_manager.ok:
+            print(f"Payment of order {payment.order_id} was processed sucessfully.")
+
         return {
             "payment_id": payment_id,
             "order_id": payment.order_id,
